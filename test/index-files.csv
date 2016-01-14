@@ -1,0 +1,7 @@
+filename,label,offset,length
+files/1.txt,A,0,2
+files/3.txt,B,0,3
+files/2.txt,B,3,3
+files/3.txt,A,2,2
+files/2.txt,C,0,4
+files/1.txt,A,4,2

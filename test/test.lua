@@ -1,0 +1,6 @@
+require './test_Cache'
+require './test_Dataset'
+require './test_Getters'
+require './test_Index'
+require './test_Reader'
+require './test_Sampler'

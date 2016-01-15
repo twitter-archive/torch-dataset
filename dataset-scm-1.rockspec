@@ -16,8 +16,8 @@ dependencies = {
    "luasocket",
    "luafilesystem",
    "paths",
-   "distribution",
    "parallel",
+   "murmurhash3",
 }
 
 build = {

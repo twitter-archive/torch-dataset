@@ -1,5 +1,3 @@
-local AliasMethod = require 'distribution.AliasMethod'
-
 local function LinearSampler(index, label)
    assert(index.indexType ~= 'SlowFS', "LinearSampler is not supported for SlowFS. Use PartLinearSampler (part-linear).")
 
@@ -164,7 +162,10 @@ local function LabelDistributionSampler(index, distribution)
       end
       weights[i] = weight
    end
-   local getClass = AliasMethod(weights)
+   local weights = torch.Tensor(weights)
+   local getClass = function()
+      return torch.multinomial(weights, 1)[1]
+   end
    return function()
       local label = index.labels[getClass()]
       return index.itemAt(torch.random(1, index.itemCount(label)), label)

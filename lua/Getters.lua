@@ -24,14 +24,25 @@ end
 
 local function getHTTP(url, offset, length)
    local sys = require 'sys'
+   local socket = require 'socket'
+   local ltn12 = require 'ltn12'
    local http = require 'socket.http'
    local function _download()
-      local t1 = sys.clock() + 30
-      while sys.clock() < t1 do
-         local body,code = http.request(url, { bindBeforeConnect = true, timeout = 10 })
+      local t1 = socket.gettime() + 30
+      while socket.gettime() < t1 do
+         local data = { }
+         local sink = ltn12.sink.table(data)
+         local xx,code = http.request({ url = url, sink = sink, timeout = 10, create = function()
+            local c = socket.tcp()
+            if c then
+               c:setoption("reuseaddr", true)
+               c:bind("*", 0)
+               return c
+            end
+         end})
          if code == 200 then
-            return body
-         elseif code == 404 then
+            return table.concat(data, '')
+         elseif code == 404 or code == 'host or service not provided, or not known' then
             print('ERROR: failed to download: ' .. url .. ' [error code = ' .. code .. ']')
             return nil
          else

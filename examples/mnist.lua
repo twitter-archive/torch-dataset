@@ -25,7 +25,7 @@ local Dataset = require 'dataset.Dataset'
 local sys = require 'sys'
 
 -- Load the index
-local trainingDataset = Dataset('http://torch.data.s3.amazonaws.com/dataset/mnist/train.t7', {
+local trainingDataset = Dataset('http://d3jod65ytittfm.cloudfront.net/dataset/mnist/train.t7', {
    partition = opt.partition,
    partitions = opt.partitions,
 })

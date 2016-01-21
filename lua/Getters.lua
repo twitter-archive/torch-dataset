@@ -28,8 +28,8 @@ local function getHTTP(url, offset, length)
    local ltn12 = require 'ltn12'
    local http = require 'socket.http'
    local function _download()
-      local t1 = socket.gettime() + 30
-      while socket.gettime() < t1 do
+      local t1 = sys.clock() + 30
+      while sys.clock() < t1 do
          local data = { }
          local sink = ltn12.sink.table(data)
          local xx,code = http.request({ url = url, sink = sink, timeout = 10, create = function()
@@ -47,6 +47,7 @@ local function getHTTP(url, offset, length)
             return nil
          else
             print('WARNING: failed to download: ' .. url .. ' [error code = ' .. (code or 'nil') .. '], retrying...')
+            sys.sleep(math.random(10000)/1000)
          end
       end
    end

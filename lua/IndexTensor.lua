@@ -35,6 +35,20 @@ local function IndexTensor(tensorOrTable, partition, partitions, opt)
       return input
    end
 
+   local function shuffle(input, perm)
+      local output = input:clone()
+      for i = 1,input:size(1) do
+         if input:nDimension() > 1 then
+            output[i]:copy(input[perm[i]])
+         else
+            output[i] = input[perm[i]]
+         end
+      end
+      return output
+   end
+
+   local items
+   local itemLabels
    local classes = { }
    local labels = { }
    local totalItems = 0
@@ -42,8 +56,15 @@ local function IndexTensor(tensorOrTable, partition, partitions, opt)
    if type(tensorOrTable) == 'table' then
       assert(tensorOrTable.x ~= nil, 'IndexTensor requires "x" table entry for items')
       assert(tensorOrTable.y ~= nil, 'IndexTensor requires "y" table entry for labels')
-      local items = downsample(tensorOrTable.x)
-      local itemLabels = downsample(tensorOrTable.y)
+      items = tensorOrTable.x
+      itemLabels = tensorOrTable.y
+      if opt.shuffle then
+         local perm = opt.perm or torch.randperm(items:size(1))
+         items = shuffle(items, perm)
+         itemLabels = shuffle(itemLabels, perm)
+      end
+      items = downsample(items)
+      itemLabels = downsample(itemLabels)
       local seen = { }
       itemLabels:apply(function(label)
          if not seen[label] then
@@ -54,31 +75,29 @@ local function IndexTensor(tensorOrTable, partition, partitions, opt)
          end
          totalItems = totalItems +1
       end)
-      local dims = { 1 }
-      for i = 2,items:nDimension() do
-         dims[i] = items:size(i)
-      end
-      local TT = torch[torch.typename(items):split("[.]")[2]]
       for _,label in ipairs(labels) do
-         dims[1] = seen[label]
-         classes[label] = TT(unpack(dims))
+         classes[label] = torch.LongTensor(seen[label])
       end
       seen = { }
       local i = 1
       itemLabels:apply(function(label)
          seen[label] = (seen[label] and seen[label] + 1) or 1
-         classes[label][seen[label]]:copy(items[i])
+         classes[label][seen[label]] = i
          i = i + 1
       end)
+      classes['*'] = items
    else
-      classes['*'] = downsample(tensorOrTable)
-      totalItems = classes['*']:size(1)
+      items = tensorOrTable
+      if opt.shuffle then
+         local perm = opt.perm or torch.randperm(items:size(1))
+         items = shuffle(items, perm)
+      end
+      items = downsample(items)
+      totalItems = items:size(1)
    end
 
    if opt.cuda then
-      for _,c in pairs(classes) do
-         c:cuda()
-      end
+      items = items:cuda()
    end
 
    table.sort(labels)
@@ -99,17 +118,9 @@ local function IndexTensor(tensorOrTable, partition, partitions, opt)
 
    local function itemAt(index, label)
       if label ~= nil then
-         return classes[label][index], label
+         return items[classes[label][index]], label
       else
-         for _,v in ipairs(labels) do
-            local n = classes[v]:size(1)
-            if index <= n then
-               return classes[v][index], v
-            else
-               index = index - n
-            end
-         end
-         return classes['*'][index]
+         return items[index], itemLabels and itemLabels[index]
       end
    end
 

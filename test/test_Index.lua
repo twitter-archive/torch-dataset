@@ -203,6 +203,96 @@ test {
       test.mustBeTrue(c == 15, 'expected 15, saw '..c)
    end,
 
+   testTensorPartitionAndShuffle = function()
+      torch.manualSeed(1)
+      local x = torch.randn(100,3,3)
+      local p = torch.randperm(100)
+      local index = IndexTensor(x, 1, 1, { shuffle = true, perm = p })
+      local index1 = IndexTensor(x, 1, 2, { shuffle = true, perm = p })
+      local index2 = IndexTensor(x, 2, 2, { shuffle = true, perm = p })
+      test.mustBeTrue(index.itemCount() == 100, 'expected 100, saw '..index.itemCount())
+      test.mustBeTrue(index1.itemCount() == 50, 'expected 50, saw '..index1.itemCount())
+      test.mustBeTrue(index2.itemCount() == 50, 'expected 50, saw '..index2.itemCount())
+      for i = 1,50 do
+         local k = (2*(i-1))+1
+         local e1 = index.itemAt(k)
+         local p1 = index1.itemAt(i)
+         test.mustBeTrue(torch.all(torch.eq(e1, p1)), 'not equal at '..k)
+         local e2 = index.itemAt(k+1)
+         local p2 = index2.itemAt(i)
+         test.mustBeTrue(torch.all(torch.eq(e2, p2)), 'not equal at '..(k+1))
+      end
+   end,
+
+   testTensorPartitionAndShuffleWithLabels = function()
+      torch.manualSeed(1)
+      local x = torch.randn(100,3,3)
+      local y = torch.ByteTensor(100)
+      for i = 1,100 do
+         y[i] = math.random(1, 10)
+      end
+      local p = torch.randperm(100)
+      local index = IndexTensor({ x = x, y = y }, 1, 1, { shuffle = true, perm = p })
+      local index1 = IndexTensor({ x = x, y = y }, 1, 2, { shuffle = true, perm = p })
+      local index2 = IndexTensor({ x = x, y = y }, 2, 2, { shuffle = true, perm = p })
+      test.mustBeTrue(index.itemCount() == 100, 'expected 100, saw '..index.itemCount())
+      test.mustBeTrue(index1.itemCount() == 50, 'expected 50, saw '..index1.itemCount())
+      test.mustBeTrue(index2.itemCount() == 50, 'expected 50, saw '..index2.itemCount())
+      for i = 1,50 do
+         local k = (2*(i-1))+1
+         local e1,el1 = index.itemAt(k)
+         local p1,pl1 = index1.itemAt(i)
+         test.mustBeTrue(torch.all(torch.eq(e1, p1)), 'not equal at '..k)
+         test.mustBeTrue(el1 == pl1, 'labels not equal at '..k)
+         local e2,el2 = index.itemAt(k+1)
+         local p2,pl2 = index2.itemAt(i)
+         test.mustBeTrue(torch.all(torch.eq(e2, p2)), 'not equal at '..(k+1))
+         test.mustBeTrue(el2 == pl2, 'labels not equal at '..k)
+      end
+   end,
+
+   testBatchedTensorPartitionAndShuffleWithLabels = function()
+      torch.manualSeed(1)
+      local N = 50000
+      local P = 8
+      local B = 1024
+      local x = torch.randn(N,3,3)
+      local y = torch.ByteTensor(N)
+      for i = 1,N do
+         y[i] = math.random(1, 10)
+      end
+      local p = torch.randperm(N)
+      local index = IndexTensor({ x = x, y = y }, 1, 1, { shuffle = true, perm = p })
+      local partitions = { }
+      for i = 1,P do
+         partitions[i] = IndexTensor({ x = x, y = y }, i, P, { shuffle = true, perm = p })
+      end
+      local function getBatch(index, i, c)
+         local k = ((i-1)*c)
+         local ret = torch.Tensor(3,3):fill(0)
+         for j = 1,c do
+            local item = index.itemAt(k+j)
+            ret:add(item)
+         end
+         ret:div(c)
+         return ret
+      end
+      local function round(t)
+         return t--:mul(1e6):floor():div(1e6)
+      end
+      for i = 1,(N/B) do
+         local b0 = getBatch(index, i, B)
+         local b1 = torch.Tensor(3,3):fill(0)
+         for j = 1,P do
+            b1:add(getBatch(partitions[j], i, B/P))
+         end
+         b1:div(P)
+         local err = (round(b0) - round(b1)):abs():max()
+         print(err)
+         test.mustBeTrue(err < 1e-10, 'not equal at '..i)
+      end
+   end,
+
    testSlowFSPartIndexCount = function()
       local index = IndexSlowFS(TestUtils.localHdfsPath)
       local initialNumItems = index.itemCount()

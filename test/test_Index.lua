@@ -97,7 +97,7 @@ test {
       test.mustBeTrue(#index.labels == 2, '#labels must be 2')
       test.mustBeTrue(index.itemCount() == 2, '#items must be 2 not '..index.itemCount())
       test.mustBeTrue(index.urlPrefix == 'http://prefix.com/go/here', 'wrong url prefix')
-      test.mustBeTrue(index.itemAt(1) == 'http://prefix.com/go/here/1?a=1&d=true&c=three&b=2', 'did not properly concat url suffix to item')
+      test.mustBeTrue(index.itemAt(1) == 'http://prefix.com/go/here/1?a=1&b=2&c=three&d=true', 'did not properly concat url suffix to item')
    end,
 
    testDirectory = function()

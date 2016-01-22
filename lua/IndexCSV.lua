@@ -128,7 +128,13 @@ local function IndexCSV(url, partition, partitions, opt)
    local urlPrefix = loadURLPrefix(url, isFileBased)
    local urlSuffix
    if opt.urlParams then
-      for k,v in pairs(opt.urlParams) do
+      local keys = { }
+      for k,_ in pairs(opt.urlParams) do
+         table.insert(keys, k)
+      end
+      table.sort(keys)
+      for _,k in ipairs(keys) do
+         local v = opt.urlParams[k]
          if urlSuffix then
             urlSuffix = urlSuffix .. '&' .. tostring(k) .. '=' .. tostring(v)
          else

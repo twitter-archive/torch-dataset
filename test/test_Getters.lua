@@ -3,11 +3,11 @@ local Getters = require 'dataset.Getters'
 local paths = require 'paths'
 
 local function simpleHTTPServer()
-   local parallel = require 'libparallel'
-   local q = parallel.workqueue('http')
-   local s = parallel.map(1, function()
-      local parallel = require 'libparallel'
-      local q = parallel.workqueue('http')
+   local ipc = require 'libipc'
+   local q = ipc.workqueue('http')
+   local s = ipc.map(1, function()
+      local ipc = require 'libipc'
+      local q = ipc.workqueue('http')
       local socket = require 'socket'
       local server = socket.tcp()
       server:settimeout(1)

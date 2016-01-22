@@ -17,7 +17,7 @@ dependencies = {
    "luasocket",
    "luafilesystem",
    "paths",
-   "parallel",
+   "ipc",
    "murmurhash3",
 }
 

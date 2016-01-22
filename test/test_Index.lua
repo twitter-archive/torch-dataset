@@ -288,7 +288,6 @@ test {
          end
          b1:div(P)
          local err = (round(b0) - round(b1)):abs():max()
-         print(err)
          test.mustBeTrue(err < 1e-10, 'not equal at '..i)
       end
    end,

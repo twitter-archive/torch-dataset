@@ -1,4 +1,4 @@
-local parallel = require 'libparallel'
+local ipc = require 'libipc'
 
 local function _get(url, path, offset, length)
    return url
@@ -49,13 +49,13 @@ local function Reader(next, opt)
       verbose = opt.verbose,
    }
    assert(#next == #init.get, 'expected one get function per next function')
-   local q = parallel.workqueue(name)
-   local workers = parallel.map(numWorkers, function(name, init)
+   local q = ipc.workqueue(name)
+   local workers = ipc.map(numWorkers, function(name, init)
       local torch = require 'torch'
       local sys = require 'sys'
-      local parallel = require 'libparallel'
+      local ipc = require 'libipc'
 
-      local q = parallel.workqueue(name)
+      local q = ipc.workqueue(name)
       local get = init.get
       local processor = init.processor
       local processorOpt = init.processorOpt

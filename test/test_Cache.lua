@@ -1,7 +1,7 @@
 local test = require 'regress'
 local paths = require 'paths'
 local Cache = require 'dataset.Cache'
-local parallel = require 'libparallel'
+local ipc = require 'libipc'
 
 test {
    testLockAndEvict = function()
@@ -48,13 +48,13 @@ test {
       for _ = 1,10 do
          local url = tostring(math.random())
          cache.evict(url)
-         local ret = { parallel.map(math.random(1, 100), function(url)
+         local ret = { ipc.map(math.random(1, 100), function(url)
             local sys = require 'sys'
-            local parallel = require 'libparallel'
+            local ipc = require 'libipc'
             local Cache = require 'dataset.Cache'
             local cache = Cache()
             local cachePath, unlock = cache.lock(url)
-            local id = tostring(parallel.gettid())
+            local id = tostring(ipc.gettid())
             if unlock then
                sys.sleep(math.random(1, 100) / 100) -- pretend to be slow
                local f = io.open(cachePath, 'w')

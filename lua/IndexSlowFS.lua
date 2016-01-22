@@ -1,4 +1,4 @@
-local parallel = require 'libparallel'
+local ipc = require 'libipc'
 local Cache = require 'dataset.Cache'
 local IndexUtils = require 'dataset.IndexUtils'
 local SlowFS = require 'dataset.SlowFS'
@@ -138,7 +138,7 @@ local function IndexSlowFS(url, partition, partitions, opt)
       if verbose then
          print("[INFO:] Starting import of file " .. url..'/'..partitionFiles[idx])
       end
-      importer = parallel.map(1, makeFileIndex, partitionFiles[idx], url, opt, idx, SlowFS.find(url))
+      importer = ipc.map(1, makeFileIndex, partitionFiles[idx], url, opt, idx, SlowFS.find(url))
    end
 
    local function addPartIndex(partIndex)

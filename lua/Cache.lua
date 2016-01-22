@@ -4,7 +4,7 @@ local function Cache(opt)
    local sys = require 'sys'
    local paths = require 'paths'
    local lfs = require 'lfs'
-   local parallel = require 'libparallel'
+   local ipc = require 'libipc'
    local mmh3 = require 'murmurhash3'
 
    opt = opt or { }
@@ -48,9 +48,9 @@ local function Cache(opt)
       -- Try and create the lock
       -- Put the mesos.runid or pid in the lock path so that
       -- crashed processes can not abandon locks
-      local id = (mesos and mesos.runid) or tostring(parallel.getpid())
+      local id = (mesos and mesos.runid) or tostring(ipc.getpid())
       local lockFn = cachePath..'.'..id..'.lock'
-      local ret = parallel.link(tmpFn, lockFn)
+      local ret = ipc.link(tmpFn, lockFn)
       if ret == 0 then
          -- We got the lock!
          -- On OSX we need to check for file staleness since our cache is very long lived
@@ -65,7 +65,7 @@ local function Cache(opt)
                -- Make sure the localPath parent directory is created
                mkdir(paths.dirname(localPath))
                -- Try and create the link
-               local ret = parallel.symlink(cachePath, localPath)
+               local ret = ipc.symlink(cachePath, localPath)
                if ret ~= 0 then
                   error('failed ('..ret..') to create symlink '..cachePath..' <- '..localPath)
                end

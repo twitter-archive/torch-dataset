@@ -52,7 +52,7 @@ local function IndexSlowFS(url, partition, partitions, opt)
       assert(partition >= 1)
       assert(partitions >= 1)
       assert(partition <= partitions)
-      assert(#t >= partitions, 'number of part files ('..#t..') must be >= number of partitions ('..partitions..')')
+      assert(#t >= partitions, 'number of part files ('..#t..') must be >= number of partitions ('..partitions..'): '..url)
 
       if partitions == 1 then
          return t
@@ -73,59 +73,55 @@ local function IndexSlowFS(url, partition, partitions, opt)
    local function makeFileIndex(fileName, url, opt, idx, SlowFS)
       local Cache = require 'dataset.Cache'
       local cache = Cache(opt)
-      local slowFS = SlowFS(cache)
-
-      local partIndex = { }
-      local numItems = 0
-
+      local slowFS = SlowFS(cache, opt)
       local fileURL = url .. '/' .. fileName
       local fpath = slowFS.get(fileURL)
-      local ipath = fpath..'.i'
 
-      local f = io.open(fpath, 'r')
-      local fi = io.open(ipath, 'w')
-      fi:write(string.format("%10X", f:seek()))
-      local lines = f:lines()
-      for _ in lines do
-         numItems = numItems + 1 -- count total number of items
-         local str = string.format("%10X", f:seek())
-         assert(string.len(str) == 10, "must have at 10 hex values for file position, instead was "..string.len(str))
-         fi:write(str)
+      local offsets = torch.DoubleTensor(1024)
+      local numItems = 0
+
+      local function addOffset(offset)
+         numItems = numItems + 1
+         if numItems > offsets:size(1) then
+            offsets:resize(offsets:size(1) + 1024)
+         end
+         offsets[numItems] = offset
       end
-      f:close()
-      fi:close()
 
-      local partIndex = { url = url,
-                          fileName = fileName,
-                          indexPath = ipath,
-                          filePath = fpath,
-                          itemCount = numItems,
-                          idx = idx,
-                        }
-      return partIndex
+      local ok,err = pcall(function()
+         local f = io.open(fpath, 'r')
+         addOffset(f:seek())
+         local lines = f:lines()
+         for _ in lines do
+            addOffset(f:seek())
+         end
+         f:close()
+      end)
+
+      if not ok then
+         error('ERROR: '..fpath..' '..tostring(err))
+      end
+
+      offsets:resize(numItems)
+
+      return {
+         url = url,
+         fileName = fileName,
+         filePath = fpath,
+         itemCount = numItems - 1,
+         offsets = offsets,
+         idx = idx,
+      }
    end
 
    ------------ Index access --------------
 
    -- item at the actual part index
    -- return filePath, offset, length of the item
-   local function innerItemAt(ip, fp, fileName, url)
+   local function innerItemAt(offsets, fp, fileName, url)
       return function(i)
-         -- Open index, seek to item,
-         local fi = io.open(ip, 'r')
-         assert(fi, 'failed to open "'..ip..'" at: '..debug.traceback())
-         fi:seek("set", 10 * (i - 1))
-         local s = fi:read(20)
-         assert(type(s) == 'string' and string.len(s) == 20, 'index "'..ip..'" item '..i..' expected a string of length 20, got: "'..tostring(s)..'"')
-         fi:close()
-
-         local offset = tonumber(s:sub(1, 10), 16)
-         local length = tonumber(s:sub(11, 20), 16) - offset - 1
-
-         local fptry = io.open(fp, 'r')
-         assert(fptry, 'File must be present on local disk.')
-         fptry:close()
-
+         local offset = offsets[i]
+         local length = offsets[i + 1] - offset - 1
          return fp, offset, length
       end
    end
@@ -136,7 +132,7 @@ local function IndexSlowFS(url, partition, partitions, opt)
       assert(#queue > 0, "must have at least one file to import")
       local idx = table.remove(queue, 1)
       if verbose then
-         print("[INFO:] Starting import of file " .. url..'/'..partitionFiles[idx])
+         io.stderr:write("[INFO:] Starting import of file " .. url..'/'..partitionFiles[idx]..'\n')
       end
       importer = ipc.map(1, makeFileIndex, partitionFiles[idx], url, opt, idx, SlowFS.find(url))
    end
@@ -151,7 +147,7 @@ local function IndexSlowFS(url, partition, partitions, opt)
 
    local function finishFileImport()
       local partIndex = importer:join()
-      partIndex.itemAt = innerItemAt(partIndex.indexPath,
+      partIndex.itemAt = innerItemAt(partIndex.offsets,
                                      partIndex.filePath,
                                      partIndex.fileName,
                                      partIndex.url)
@@ -186,24 +182,26 @@ local function IndexSlowFS(url, partition, partitions, opt)
       assert(resident[partIndex], "part must be present to remove it")
       if #partitionFiles > 1 then
          if verbose then
-            print('[INFO:] Evicting ' .. url..'/'..resident[partIndex].fileName .. ' from cache.')
+            io.stderr:write('[INFO:] Evicting ' .. url..'/'..resident[partIndex].fileName .. ' from cache.\n')
          end
-         if slowFS.evict(url .. '/' .. resident[partIndex].fileName) then
-            os.remove(resident[partIndex].indexPath)
-         end
+         slowFS.evict(url .. '/' .. resident[partIndex].fileName)
       end
       resident[partIndex] = nil
    end
 
    local function reset()
       if importer then
-         local part = importer:join()
+         local part = finishFileImport()
          resident[part.idx] = part
          importer = nil
       end
       totalItems = #partitionFiles
       -- evict all the resident files
+      local keys = { }
       for i,v in pairs(resident) do
+         table.insert(keys, i)
+      end
+      for _,i in ipairs(keys) do
          doneWithPart(i)
       end
    end
@@ -214,7 +212,7 @@ local function IndexSlowFS(url, partition, partitions, opt)
          -- finish the import
          local part = finishFileImport()
          if verbose then
-            print('[INFO:] Finishing import of ' .. url..'/'..part.fileName .. ' into cache.')
+            io.stderr:write('[INFO:] Finishing import of ' .. url..'/'..part.fileName .. ' into cache.\n')
          end
          assert(partIndex == part.idx)
          resident[partIndex] = part

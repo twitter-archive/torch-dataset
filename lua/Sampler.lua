@@ -366,8 +366,7 @@ local function Sampler(kind, index, label, options)
    elseif kind == 'label-distribution' then
       return LabelDistributionSampler(index, options)
    else
-      print("Invalid sampler kind: "..kind..". See go/torch for the list of accepted samplers.")
-      os.exit(1)
+      error("Invalid sampler kind: "..kind..". See go/torch for the list of accepted samplers.")
    end
 end
 

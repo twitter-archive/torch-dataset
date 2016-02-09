@@ -32,21 +32,24 @@ local function getHTTP(url, offset, length)
       while sys.clock() < t1 do
          local data = { }
          local sink = ltn12.sink.table(data)
-         local xx,code = http.request({ url = url, sink = sink, timeout = 10, create = function()
-            local c = socket.tcp()
-            if c then
+         local _,code = http.request({
+            url = url,
+            sink = sink,
+            timeout = 10,
+            create = function()
+               local c = socket.tcp()
                c:setoption("reuseaddr", true)
                c:bind("*", 0)
                return c
             end
-         end})
+         })
          if code == 200 then
             return table.concat(data, '')
-         elseif code == 404 or code == 'host or service not provided, or not known' then
-            print('ERROR: failed to download: ' .. url .. ' [error code = ' .. code .. ']')
+         elseif code == 404 then
+            io.stderr:write('ERROR: failed to download: ' .. url .. ' [error code = ' .. code .. ']\n')
             return nil
          else
-            print('WARNING: failed to download: ' .. url .. ' [error code = ' .. (code or 'nil') .. '], retrying...')
+            io.stderr:write('WARNING: failed to download: ' .. url .. ' [error code = ' .. (code or 'nil') .. '], retrying...\n')
             sys.sleep(math.random(10000)/1000)
          end
       end

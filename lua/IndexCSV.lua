@@ -67,7 +67,7 @@ local function IndexCSV(url, partition, partitions, opt)
                elseif string.sub(part, 1, 5) == 'label' then
                   table.insert(labelPos, pos)
                else
-                  print('Index CSV unknown column: ' .. part)
+                  io.stderr:write('Index CSV unknown column: ' .. part .. '\n')
                end
             end
             assert(filenamePos ~= nil, 'Index CSV must have a filename column')

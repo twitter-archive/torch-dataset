@@ -80,9 +80,6 @@ local function MockHDFS(cache, opt)
       get = function(remotePath)
          local mmh3 = require 'murmurhash3'
          local localPath = '/tmp/' .. mmh3.hash32(remotePath)
-         if verbose then
-            print("[INFO:] Local HDFS - importing " .. remotePath)
-         end
          os.execute('cp ' .. removePrefix(remotePath) .. ' ' .. localPath)
          return localPath
       end,

@@ -73,7 +73,7 @@ local function Reader(next, opt)
                if item then
                   local ok,resi = pcall(function() return geti(item.url, item.offset, item.length) end)
                   if verbose and not ok then
-                     print(resi)
+                     io.stderr:write(resi)
                   else
                      res[i] = resi
                   end
@@ -85,7 +85,7 @@ local function Reader(next, opt)
                res[#get + 2] = param.input
                local ok1, ok2, extra = pcall(function() return processor(unpack(res, 1, #get + 2)) end)
                if verbose and not ok1 then
-                  print(ok2)
+                  io.stderr:write(ok2)
                end
                q:write({
                   id = param.id,

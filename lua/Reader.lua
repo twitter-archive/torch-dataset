@@ -46,7 +46,6 @@ local function Reader(next, opt)
       processor = opt.processor or _processor,
       processorOpt = opt.processorOpt or { },
       sizeTable = _sizeTable,
-      verbose = opt.verbose,
    }
    assert(#next == #init.get, 'expected one get function per next function')
    local q = ipc.workqueue(name)
@@ -60,7 +59,6 @@ local function Reader(next, opt)
       local processor = init.processor
       local processorOpt = init.processorOpt
       local sizeTable = init.sizeTable
-      local verbose = init.verbose
 
       while true do
          local param = q:read()
@@ -72,8 +70,8 @@ local function Reader(next, opt)
                local item = param.items[i]
                if item then
                   local ok,resi = pcall(function() return geti(item.url, item.offset, item.length) end)
-                  if verbose and not ok then
-                     io.stderr:write(resi)
+                  if not ok then
+                     io.stderr:write(tostring(resi)..'\n')
                   else
                      res[i] = resi
                   end
@@ -84,8 +82,8 @@ local function Reader(next, opt)
                res[#get + 1] = processorOpt
                res[#get + 2] = param.input
                local ok1, ok2, extra = pcall(function() return processor(unpack(res, 1, #get + 2)) end)
-               if verbose and not ok1 then
-                  io.stderr:write(ok2)
+               if not ok1 then
+                  io.stderr:write(tostring(ok2)..'\n')
                end
                q:write({
                   id = param.id,

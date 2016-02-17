@@ -49,7 +49,7 @@ test {
       end
       local function processor(res, processorOpt, input)
          local n = tonumber(res)
-         if pass(n) then
+         if processorOpt.pass(n) then
             input:fill(n)
             return true
          end
@@ -60,6 +60,9 @@ test {
          samplerKind = 'linear',
          get = get,
          processor = processor,
+         processorOpt = {
+            pass = pass,
+         },
       })
       local x = 1
       for b = 1,numBatches() do
@@ -90,7 +93,7 @@ test {
       end
       local function processor(res, processorOpt, input)
          local n = tonumber(res)
-         if pass(n) then
+         if processorOpt.pass(n) then
             input:fill(n)
             return true
          end
@@ -109,6 +112,9 @@ test {
          samplerKind = 'linear',
          get = get,
          processor = processor,
+         processorOpt = {
+            pass = pass,
+         },
       })
       for b = 1,numBatches() do
          local batch = getBatch()

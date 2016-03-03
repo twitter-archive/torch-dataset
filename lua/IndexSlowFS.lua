@@ -11,6 +11,7 @@ local function IndexSlowFS(url, partition, partitions, opt)
    assert(partitions >= 1)
    assert(partition <= partitions)
    local opt = opt or { }
+   local maxParts = opt.maxParts
    local verbose = opt.verbose or false
    local cache = Cache(opt)
    local slowFS = SlowFS.find(url)(cache, opt)
@@ -41,7 +42,8 @@ local function IndexSlowFS(url, partition, partitions, opt)
       local files = { }  -- all part files in this partition
       local parts = slowFS.parts(root)
 
-      for _,part in ipairs(parts) do
+      for i,part in ipairs(parts) do
+         if maxParts and i > maxParts then break end
          addFile(files, part:sub(#root + 2))
       end
 
@@ -76,39 +78,13 @@ local function IndexSlowFS(url, partition, partitions, opt)
       local slowFS = SlowFS(cache, opt)
       local fileURL = url .. '/' .. fileName
       local fpath = slowFS.get(fileURL)
-
-      local offsets = torch.DoubleTensor(1024)
-      local numItems = 0
-
-      local function addOffset(offset)
-         numItems = numItems + 1
-         if numItems > offsets:size(1) then
-            offsets:resize(offsets:size(1) + 1024)
-         end
-         offsets[numItems] = offset
-      end
-
-      local ok,err = pcall(function()
-         local f = io.open(fpath, 'r')
-         addOffset(f:seek())
-         local lines = f:lines()
-         for _ in lines do
-            addOffset(f:seek())
-         end
-         f:close()
-      end)
-
-      if not ok then
-         error('ERROR: '..fpath..' '..tostring(err))
-      end
-
-      offsets:resize(numItems)
-
+      local dataset = require 'libdataset'
+      local offsets = dataset.offsets(fpath)
       return {
          url = url,
          fileName = fileName,
          filePath = fpath,
-         itemCount = numItems - 1,
+         itemCount = offsets:size(1) - 1,
          offsets = offsets,
          idx = idx,
       }

@@ -51,7 +51,7 @@ test {
       end
       local function processor(res)
          if tonumber(res) % 13 == 0 then
-            assert()
+            error('skip me')
          end
          return true
       end

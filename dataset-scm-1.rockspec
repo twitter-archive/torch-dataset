@@ -22,20 +22,12 @@ dependencies = {
 }
 
 build = {
-   type = "builtin",
-   modules = {
-      ['dataset.Batch'] = 'lua/Batch.lua',
-      ['dataset.Cache'] = 'lua/Cache.lua',
-      ['dataset.Dataset'] = 'lua/Dataset.lua',
-      ['dataset.Getters'] = 'lua/Getters.lua',
-      ['dataset.Index'] = 'lua/Index.lua',
-      ['dataset.IndexCSV'] = 'lua/IndexCSV.lua',
-      ['dataset.IndexDirectory'] = 'lua/IndexDirectory.lua',
-      ['dataset.IndexSlowFS'] = 'lua/IndexSlowFS.lua',
-      ['dataset.IndexTensor'] = 'lua/IndexTensor.lua',
-      ['dataset.IndexUtils'] = 'lua/IndexUtils.lua',
-      ['dataset.Reader'] = 'lua/Reader.lua',
-      ['dataset.Sampler'] = 'lua/Sampler.lua',
-      ['dataset.SlowFS'] = 'lua/SlowFS.lua',
-   },
+   type = "command",
+   build_command = [[
+cmake -E make_directory build;
+cd build;
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(LUA_BINDIR)/.." -DCMAKE_INSTALL_PREFIX="$(PREFIX)" -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC;
+$(MAKE)
+   ]],
+   install_command = "cd build && $(MAKE) install"
 }

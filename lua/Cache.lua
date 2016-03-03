@@ -5,6 +5,7 @@ local function Cache(opt)
    local paths = require 'paths'
    local lfs = require 'lfs'
    local ipc = require 'libipc'
+   local dataset = require 'libdataset'
    local mmh3 = require 'murmurhash3'
 
    opt = opt or { }
@@ -50,7 +51,7 @@ local function Cache(opt)
       -- crashed processes can not abandon locks
       local id = (mesos and mesos.runid) or tostring(ipc.getpid())
       local lockFn = cachePath..'.'..id..'.lock'
-      local ret = ipc.link(tmpFn, lockFn)
+      local ret = dataset.link(tmpFn, lockFn)
       if ret == 0 then
          -- We got the lock!
          -- On OSX we need to check for file staleness since our cache is very long lived
@@ -65,7 +66,7 @@ local function Cache(opt)
                -- Make sure the localPath parent directory is created
                mkdir(paths.dirname(localPath))
                -- Try and create the link
-               local ret = ipc.symlink(cachePath, localPath)
+               local ret = dataset.symlink(cachePath, localPath)
                if ret ~= 0 then
                   error('failed ('..ret..') to create symlink '..cachePath..' <- '..localPath)
                end

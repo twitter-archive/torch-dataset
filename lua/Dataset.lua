@@ -10,7 +10,7 @@ local function Dataset(indexURL, opt)
    local partition = opt.partition or 1
    local partitions = opt.partitions or 1
    -- See if this is a table of urls and not a table of tensors
-   if type(indexURL) ~= 'table' or torch.typename(indexURL[1]) ~= nil then
+   if type(indexURL) ~= 'table' or torch.typename(indexURL.x) ~= nil then
       indexURL = { indexURL }
    end
    local index = { }

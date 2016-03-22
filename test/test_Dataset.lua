@@ -490,9 +490,9 @@ test {
          while b <= numBatches() do
             local batch = getBatch()
             local input = batch.input[1]
-
             local s = input:byte():storage():string()
-            table.insert(resultLines, s)
+            local trimNewline = string.gsub(s, '\n$', '')
+            table.insert(resultLines, trimNewline)
 
             b = b + 1
          end

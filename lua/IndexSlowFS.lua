@@ -97,7 +97,7 @@ local function IndexSlowFS(url, partition, partitions, opt)
    local function innerItemAt(offsets, fp, fileName, url)
       return function(i)
          local offset = offsets[i]
-         local length = offsets[i + 1] - offset - 1
+         local length = offsets[i + 1] - offset
          return fp, offset, length
       end
    end

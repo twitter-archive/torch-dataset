@@ -1,6 +1,5 @@
 local ipc = require 'libipc'
 local Cache = require 'dataset.Cache'
-local IndexUtils = require 'dataset.IndexUtils'
 local SlowFS = require 'dataset.SlowFS'
 
 local function IndexSlowFS(url, partition, partitions, opt)
@@ -15,7 +14,6 @@ local function IndexSlowFS(url, partition, partitions, opt)
    local verbose = opt.verbose or false
    local cache = Cache(opt)
    local slowFS = SlowFS.find(url)(cache, opt)
-   local indexUtils = IndexUtils(opt)
 
    local totalItems = 0  --total item counter, updated as we parse part files
 

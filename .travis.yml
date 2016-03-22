@@ -37,7 +37,7 @@ addons:
 before_script:
 - export ROOT_TRAVIS_DIR=$(pwd)
 - export INSTALL_PREFIX=~/torch/install
--  ls $HOME/OpenBlasInstall/lib || (cd /tmp/ && git clone https://github.com/xianyi/OpenBLAS.git -b master && cd OpenBLAS && make clean && (make USE_THREAD=0 USE_THREADS=0 USE_OPENMP=0 NO_AFFINITY=1 -j$(getconf _NPROCESSORS_ONLN) 2>/dev/null >/dev/null) && make USE_THREAD=0 USE_THREADS=0 USE_OPENMP=0 NO_AFFINITY=0 PREFIX=$HOME/OpenBlasInstall install)
+- ls $HOME/OpenBlasInstall/lib || (cd /tmp/ && git clone https://github.com/xianyi/OpenBLAS.git -b master && cd OpenBLAS && make clean && (make USE_THREAD=0 USE_THREADS=0 USE_OPENMP=0 NO_AFFINITY=1 -j$(getconf _NPROCESSORS_ONLN) 2>/dev/null >/dev/null) && make USE_THREAD=0 USE_THREADS=0 USE_OPENMP=0 NO_AFFINITY=0 PREFIX=$HOME/OpenBlasInstall install)
 - git clone https://github.com/torch/distro.git ~/torch --recursive
 - cd ~/torch && git submodule update --init --recursive
 - mkdir build && cd build
@@ -52,4 +52,4 @@ script:
 - ${INSTALL_PREFIX}/bin/luarocks make
 - export PATH=${INSTALL_PREFIX}/bin:$PATH
 - export OMP_NUM_THREADS=1
-- th test/test.lua
+- travis_wait th test/test.lua

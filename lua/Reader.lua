@@ -81,7 +81,7 @@ local function Reader(next, opt)
                local before = sizeTable(param.input)
                res[#get + 1] = processorOpt
                res[#get + 2] = param.input
-               local ok1, ok2, extra = pcall(function() return processor(unpack(res, 1, #get + 2)) end)
+               local ok1, ok2, extra = pcall(function() return processor((unpack or table.unpack)(res, 1, #get + 2)) end)
                if not ok1 then
                   io.stderr:write(tostring(ok2)..'\n')
                end

@@ -20,7 +20,7 @@ local function IndexTensor(tensorOrTable, partition, partitions, opt)
             dims[i] = input:size(i)
          end
          local TT = torch[torch.typename(input):split("[.]")[2]]
-         local output = TT(unpack(dims))
+         local output = TT((unpack or table.unpack)(dims))
          local j = partition
          for i = 1,n do
             if #dims > 1 then

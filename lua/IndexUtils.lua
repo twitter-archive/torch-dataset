@@ -13,7 +13,7 @@ local function IndexUtils(opt)
          class = { label = label, numItems = 0, items = { } }
          classes[label] = class
       end
-      class.numItems = class.numItems + (item.itemCount or 1)
+      class.numItems = class.numItems + 1
       table.insert(class.items, item)
    end
 
@@ -31,7 +31,7 @@ local function IndexUtils(opt)
             ret[class.label] = nc
             for i,item in ipairs(class.items) do
                if (i % partitions) == (partition - 1) then
-                  nc.numItems = nc.numItems + (item.itemCount or 1)
+                  nc.numItems = nc.numItems + 1
                   table.insert(nc.items, item)
                end
             end

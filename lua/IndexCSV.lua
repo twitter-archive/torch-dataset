@@ -42,8 +42,6 @@ local function IndexCSV(url, partition, partitions, opt)
       local filenamePos
       local offsetPos
       local lengthPos
-      local itemCountPos
-      local itemSizePos
       local labelPos = { }
       for line in lines do
          local parts = splitLine(line)
@@ -58,12 +56,6 @@ local function IndexCSV(url, partition, partitions, opt)
                elseif part == 'length' then
                   assert(lengthPos == nil, 'Index CSV can only have one length column')
                   lengthPos = pos
-               elseif part == 'itemCount' then
-                  assert(itemCountPos == nil, 'Index CSV can only have one itemCount column')
-                  itemCountPos = pos
-               elseif part == 'itemSize' then
-                  assert(itemSizePos == nil, 'Index CSV can only have one itemSize column')
-                  itemSizePos = pos
                elseif string.sub(part, 1, 5) == 'label' then
                   table.insert(labelPos, pos)
                else
@@ -83,14 +75,6 @@ local function IndexCSV(url, partition, partitions, opt)
             if lengthPos ~= nil then
                item.length = tonumber(parts[lengthPos])
                assert(item.length)
-            end
-            if itemCountPos ~= nil then
-               item.itemCount = tonumber(parts[itemCountPos])
-               assert(item.itemCount)
-            end
-            if itemSizePos ~= nil then
-               item.itemSize = tonumber(parts[itemSizePos])
-               assert(item.itemSize)
             end
             if #labelPos > 0 then
                for _,pos in ipairs(labelPos) do
@@ -120,7 +104,7 @@ local function IndexCSV(url, partition, partitions, opt)
             end
          end)
       end
-      return classes,(itemCountPos ~= nil or offsetPos ~= nil)
+      return classes,offsetPos ~= nil
    end
 
    local loaded,isFileBased = loadCSV(url)

@@ -18,7 +18,7 @@ dependencies = {
    "luafilesystem",
    "paths",
    "ipc",
-   "murmurhash3",
+   "murmurhash3 >= 1.3",
 }
 
 build = {

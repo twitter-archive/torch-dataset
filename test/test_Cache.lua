@@ -180,6 +180,7 @@ test {
       end
       f:close()
       local s = dataset.dirsize(n)
+      os.execute('ls -al '..n)
       assert(s == 1073741824, 'expected 1073741824 saw '..s)
    end,
 }

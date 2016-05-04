@@ -6,7 +6,6 @@ local ipc = require 'libipc'
 local sys = require 'sys'
 
 test {
---[[
    testLockRemoveUnlockLockAndEvict = function()
       local cache = Cache({ forceEvict = true})
       local url = tostring(math.random())
@@ -166,7 +165,7 @@ test {
       unlock1()
       unlock2()
    end,
---]]
+
    testDirsize = function()
       local n = os.tmpname()
       os.execute('rm '..n)

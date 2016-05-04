@@ -10,6 +10,7 @@ local function IndexCSV(url, partition, partitions, opt)
    assert(partition <= partitions)
    opt = opt or { }
    local indexUtils = IndexUtils(opt)
+   local splitExpr = '[^' .. (opt.separator or ",") .. ']+'
 
    local function loadURLPrefix(url, isFileBased)
       local metaURL = opt.metaURL or (paths.dirname(url) .. '/' .. paths.basename(url, paths.extname(url)) .. '-meta.csv')
@@ -29,7 +30,7 @@ local function IndexCSV(url, partition, partitions, opt)
 
    local function splitLine(line)
       local parts = { }
-      for part in line:gmatch('[^,]+') do
+      for part in line:gmatch(splitExpr) do
          table.insert(parts, part)
       end
       return parts
@@ -58,7 +59,7 @@ local function IndexCSV(url, partition, partitions, opt)
                   lengthPos = pos
                elseif string.sub(part, 1, 5) == 'label' then
                   table.insert(labelPos, pos)
-               else
+               elseif not opt.ignoreUnknownColumns then
                   io.stderr:write('Index CSV unknown column: ' .. part .. '\n')
                end
             end

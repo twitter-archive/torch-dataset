@@ -1,4 +1,5 @@
 -- test utils
+local ipc = require 'libipc'
 
 local localHdfsPath = 'viewfs://' .. paths.dirname(paths.thisfile()) .. '/hdfs/files'
 
@@ -88,6 +89,42 @@ local function MockHDFS(cache, opt)
          local mmh3 = require 'murmurhash3'
          local localPath = '/tmp/' .. mmh3.hash32(remotePath)
          os.remove(localPath)
+      end,
+
+      fileOffsets = function(localPath)
+         local offsets = { }
+         local f = io.open(localPath, 'r')
+         local start = 0
+         for line in f:lines() do
+            table.insert(offsets, start)
+            local off = f:seek("cur", 0)
+            table.insert(offsets, off - start - 1)
+            start = off
+         end
+         f:close()
+         return torch.LongTensor(offsets)
+      end,
+
+      streamFormat = function(remotePath, persist)
+         local fn = removePrefix(remotePath)
+         local p = ipc.spawn({
+            file = 'cat',
+            args = { fn },
+         })
+         local line
+         local stream = {
+            next = function()
+               line = p:stdout('*line')
+               return line ~= nil
+            end,
+            record = function()
+               return line
+            end,
+         }
+         local function wait(signal)
+            p:wait(signal)
+         end
+         return stream, wait
       end,
    }
 end

@@ -3,10 +3,14 @@ local Index = require 'dataset.Index'
 local Reader = require 'dataset.Reader'
 local Getters = require 'dataset.Getters'
 local Sampler = require 'dataset.Sampler'
+local SlowFS = require 'dataset.SlowFS'
+local StreamedDataset = require 'dataset.StreamedDataset'
 
 local function Dataset(indexURL, opt)
-
    opt = opt or { }
+   if type(indexURL) == 'string' and SlowFS.find(indexURL) ~= nil and opt.streaming == true then
+      return StreamedDataset(indexURL, opt)
+   end
    local partition = opt.partition or 1
    local partitions = opt.partitions or 1
    -- See if this is a table of urls and not a table of tensors

@@ -43,7 +43,9 @@ local function Batch(opt)
    }
 
    batch.reset = function(newInputDims)
-      inputDims = applyInputDims(newInputDims or opt.inputDims)
+      if newInputDims then
+         inputDims = applyInputDims(newInputDims or opt.inputDims)
+      end
       input:resize(inputDims)
       if opt.cuda then
          readerInput:resize(inputDims)

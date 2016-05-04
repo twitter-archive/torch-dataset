@@ -66,6 +66,7 @@ local function Reader(next, opt)
             break
          else
             local res = { }
+            local urls = {}
             for i,geti in ipairs(get) do
                local item = param.items[i]
                if item then
@@ -74,6 +75,7 @@ local function Reader(next, opt)
                      io.stderr:write(tostring(resi)..'\n')
                   else
                      res[i] = resi
+                     urls[i] = item.url
                   end
                end
             end
@@ -83,7 +85,7 @@ local function Reader(next, opt)
                res[#get + 2] = param.input
                local ok1, ok2, extra = pcall(function() return processor((unpack or table.unpack)(res, 1, #get + 2)) end)
                if not ok1 then
-                  io.stderr:write(tostring(ok2)..'\n')
+                  io.stderr:write('processing error on ' .. table.concat(urls, ',') .. ':\n' .. tostring(ok2)..'\n')
                end
                q:write({
                   id = param.id,

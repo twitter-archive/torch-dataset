@@ -1,4 +1,4 @@
-local ipc = require 'libipc'
+local BackgroundTaskPool = require 'ipc.BackgroundTaskPool'
 local Cache = require 'dataset.Cache'
 local SlowFS = require 'dataset.SlowFS'
 
@@ -22,7 +22,7 @@ local function IndexSlowFS(url, partition, partitions, opt)
    local queue = { }
 
    -- handler on the background file importer
-   local importer
+   local importer = BackgroundTaskPool(1)
 
    -- what part files are currently resident (by part index)
    local resident = { }
@@ -76,13 +76,12 @@ local function IndexSlowFS(url, partition, partitions, opt)
       local slowFS = SlowFS(cache, opt)
       local fileURL = url .. '/' .. fileName
       local fpath = slowFS.get(fileURL)
-      local dataset = require 'libdataset'
-      local offsets = dataset.offsets(fpath)
+      local offsets = slowFS.fileOffsets(fpath)
       return {
          url = url,
          fileName = fileName,
          filePath = fpath,
-         itemCount = offsets:size(1) - 1,
+         itemCount = offsets:size(1) / 2,
          offsets = offsets,
          idx = idx,
       }
@@ -94,8 +93,9 @@ local function IndexSlowFS(url, partition, partitions, opt)
    -- return filePath, offset, length of the item
    local function innerItemAt(offsets, fp, fileName, url)
       return function(i)
-         local offset = offsets[i]
-         local length = offsets[i + 1] - offset
+         local k = (2 * (i - 1)) + 1
+         local offset = offsets[k]
+         local length = offsets[k + 1]
          return fp, offset, length
       end
    end
@@ -108,19 +108,19 @@ local function IndexSlowFS(url, partition, partitions, opt)
       if verbose then
          io.stderr:write("[INFO:] Starting import of file " .. url..'/'..partitionFiles[idx]..'\n')
       end
-      importer = ipc.map(1, makeFileIndex, partitionFiles[idx], url, opt, idx, SlowFS.find(url))
+      importer.addTask(makeFileIndex, partitionFiles[idx], url, opt, idx, SlowFS.find(url))
    end
 
    local function addPartIndex(partIndex)
       assert(partIndex <= #partitionFiles and partIndex > 0, "index of part file must be valid")
       table.insert(queue, partIndex)
-      if not importer then
+      if not importer.hasTask() then
          startNextImport()
       end
    end
 
    local function finishFileImport()
-      local partIndex = importer:join()
+      local partIndex = importer.getResult()
       partIndex.itemAt = innerItemAt(partIndex.offsets,
                                      partIndex.filePath,
                                      partIndex.fileName,
@@ -148,26 +148,24 @@ local function IndexSlowFS(url, partition, partitions, opt)
       -- it better be resident, itemsInPart called first!
       assert(resident[partIndex])
       -- get the item at index out of the part
-      assert(index >= 1 and index <= resident[partIndex].itemCount, 'itemAt('..partIndex..', '..index..') out of range: [1,'..resident[partIndex].itemCount..']: '..debug.traceback())
+      if index < 1 or index > resident[partIndex].itemCount then
+         assert(index >= 1 and index <= resident[partIndex].itemCount, 'itemAt('..partIndex..', '..index..') out of range: [1,'..resident[partIndex].itemCount..']: '..debug.traceback())
+      end
       return resident[partIndex].itemAt(index)
    end
 
    local function doneWithPart(partIndex)
       assert(resident[partIndex], "part must be present to remove it")
       if #partitionFiles > 1 then
-         if verbose then
-            io.stderr:write('[INFO:] Evicting ' .. url..'/'..resident[partIndex].fileName .. ' from cache.\n')
-         end
          slowFS.evict(url .. '/' .. resident[partIndex].fileName)
       end
       resident[partIndex] = nil
    end
 
    local function reset()
-      if importer then
+      if importer.hasTask() then
          local part = finishFileImport()
          resident[part.idx] = part
-         importer = nil
       end
       totalItems = #partitionFiles
       -- evict all the resident files
@@ -182,7 +180,6 @@ local function IndexSlowFS(url, partition, partitions, opt)
 
    local function itemsInPart(partIndex)
       if not resident[partIndex] then
-         assert(importer, "importer must be initialized")
          -- finish the import
          local part = finishFileImport()
          if verbose then
@@ -195,8 +192,6 @@ local function IndexSlowFS(url, partition, partitions, opt)
          -- start the next import if more parts in queue
          if #queue > 0 then
             startNextImport()
-         else -- we're done, set importer to nil
-            importer = nil
          end
       end
       return resident[partIndex].itemCount

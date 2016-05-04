@@ -323,14 +323,14 @@ test {
       index.itemsInPart(1)
 
       local expectedOffset1 = 0
-      local expectedLength1 = 176
+      local expectedLength1 = 175
       local resPath1, resOffset1, resLength1 = index.itemAt(1, 1)
 
       test.mustBeTrue(expectedOffset1 == resOffset1, 'offset to first item in first part file didnt match:'..resOffset1)
       test.mustBeTrue(expectedLength1 == resLength1, 'length to first item in first part file didnt match:'..resLength1)
 
       local expectedOffset2 = 176
-      local expectedLength2 = 106
+      local expectedLength2 = 105
       local resPath2, resOffset2, resLength2 = index.itemAt(1, 2)
 
       test.mustBeTrue(expectedOffset2 == resOffset2, 'offset to second item in first part file didnt match:'..resOffset2)

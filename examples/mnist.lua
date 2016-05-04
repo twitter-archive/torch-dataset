@@ -56,5 +56,4 @@ while b <= numTrainingBatches() do
       local ips = c / dt
       print('Sampled '..c..' images in '..dt..' seconds ('..ips..' images per second)')
    end
-   b = b + 1
 end

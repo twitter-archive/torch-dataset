@@ -62,7 +62,10 @@ local function Index(url, partition, partitions, opt)
       local ext = paths.extname(url)
       if ext == 't7' or ext == 'th' then
          return IndexTensor(torch.load(fetchIndexFiles(url, ext)), partition, partitions, opt)
-      elseif ext == 'csv' then
+      elseif ext == 'csv' or ext == 'tsv' then
+         if ext == 'tsv' and opt.separator == nil then
+            opt.separator = '\t'
+         end
          local fn, mfn = fetchIndexFiles(url, ext, true)
          opt.metaURL = mfn
          return IndexCSV(fn, partition, partitions, opt)

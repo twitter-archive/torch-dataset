@@ -1,12 +1,21 @@
 
 local constructors = { }
 
+local function split(x, y)
+   local i, j = x:find(y)
+   if i ~= nil then
+      return { x:sub(1, i - 1), x:sub(j + 1) }
+   else
+      return { }
+   end
+end
+
 local function register(url, constructor)
-   constructors[url:split("://")[1]] = constructor
+   constructors[split(url, "://")[1]] = constructor
 end
 
 local function find(url)
-   return constructors[url:split("://")[1]]
+   return constructors[split(url, "://")[1]]
 end
 
 -- Hack for Cortex

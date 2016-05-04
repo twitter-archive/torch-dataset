@@ -25,6 +25,8 @@ SET(luasrc
    lua/Reader.lua
    lua/Sampler.lua
    lua/SlowFS.lua
+   lua/SlowFSStream.lua
+   lua/StreamedDataset.lua
 )
 
 ADD_TORCH_PACKAGE(dataset "${src}" "${luasrc}" "A dataset library, for Torch")

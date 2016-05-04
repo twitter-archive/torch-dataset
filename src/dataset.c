@@ -25,7 +25,7 @@ int dataset_symlink(lua_State *L) {
 int dataset_dirsize(lua_State *L) {
    const char *dir_name = lua_tostring(L, 1);
    DIR *dir = opendir(dir_name);
-   fprintf(stderr, "dir = %p\n", dir);
+   fprintf(stderr, "dir = %p\n", (void *)dir);
    if (!dir) {
       lua_pushinteger(L, -errno);
       return 1;
@@ -34,7 +34,7 @@ int dataset_dirsize(lua_State *L) {
    char file_name[PATH_MAX];
    size_t total = 0;
    while ((d = readdir(dir)) != NULL) {
-      fprintf(stderr, "d = %p, %d\n", d, d->d_type);
+      fprintf(stderr, "d = %p, %d\n", (void *)d, d->d_type);
       if (d->d_type == DT_REG) {
          snprintf(file_name, PATH_MAX, "%s/%s", dir_name, d->d_name);
          struct stat buf;

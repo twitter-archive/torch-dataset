@@ -48,6 +48,7 @@ a CDN these images are stored.
 Here's an example of using a index.csv file with Dataset.
 
 ```lua
+   local Dataset = require 'dataset.Dataset'
    local dataset, numBatches = Dataset('index.csv')
 
    local getBatch, numBatches = dataset.sampledBatcher({
